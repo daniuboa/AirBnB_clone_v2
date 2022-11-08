@@ -1,37 +1,35 @@
-#!/usr/bin/python3
-"""script that generates a .tgz archive from the contents of the web_static
-folder of your AirBnB Clone repo, using the function do_pack.
-"""
-from datetime import datetime
-from fabric.api import local
-import os
+#!/usr/bin/env bash
+# Sets up a web server for deployment of web_static.
 
+apt-get update
+apt-get install -y nginx
 
-def do_pack():
-    """ generates a .tgz archive from the contents of the web_static
+mkdir -p /data/web_static/releases/test/
+mkdir -p /data/web_static/shared/
+echo "Holberton School" > /data/web_static/releases/test/index.html
+ln -sf /data/web_static/releases/test/ /data/web_static/current
 
-    All files in the folder web_static must be added to the final archive.
-    All archives must be stored in the folder versions.
-    The name of the archive created must be:
-        web_static_<year><month><day><hour><minute><second>.tgz
-    The function do_pack must return the archive path if the archive has
-    been correctly generated. Otherwise, it should return None.
+chown -R ubuntu /data/
+chgrp -R ubuntu /data/
 
-    Returns:
-        fabric.operations._AttributeString: archive path.
-    """
-    now = datetime.now().strftime("%Y%m%d%H%M%S")
+printf %s "server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    add_header X-Served-By $HOSTNAME;
+    root   /var/www/html;
+    index  index.html index.htm;
+    location /hbnb_static {
+        alias /data/web_static/current;
+        index index.html index.htm;
+    }
+    location /redirect_me {
+        return 301 http://cuberule.com/;
+    }
+    error_page 404 /404.html;
+    location /404 {
+      root /var/www/html;
+      internal;
+    }
+}" > /etc/nginx/sites-available/default
 
-    # create folder versions if it doesn’t exist
-    local("mkdir -p versions")
-
-    # extract the contents of a tar archive
-    result = local("tar -czvf versions/web_static_{}.tgz web_static"
-                   .format(now))
-    if result.failed:
-        return None
-    else:
-        return result
-
-if __name__ == "__main__":
-    do_pack()
+service nginx restart
