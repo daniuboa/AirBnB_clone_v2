@@ -26,7 +26,7 @@ def hbnb():
 
 
 @pp.route('/c/<text>', strict_slashes=False)
-def c_text(text):
+def c(text):
     """Displays 'C' followed by the value of the text variable"""
     return 'C {}'.format(text.replace('_', ' '))
 
